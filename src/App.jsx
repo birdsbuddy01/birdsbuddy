@@ -164,8 +164,8 @@ const Footer = () => (
       </div>
 
       <div className="text-[10px] text-slate-600 font-mono uppercase tracking-[0.2em] text-center space-y-2">
-        <p>© 2024 Birds Buddy Systems. All Rights Reserved.</p>
-        <p className="opacity-50">Advanced Bio-Monitoring & Automata System • Mk. I</p>
+        <p>© 2025 Birds Buddy Systems. All Rights Reserved.</p>
+        <p className="opacity-50">Advanced Bio-Monitoring & Automated System </p>
       </div>
     </div>
   </footer>
@@ -365,10 +365,10 @@ const ActivityView = ({ logs }) => (
 
 const AboutView = () => {
   const teamMembers = [
-    { name: "XXXX", contact: "1111111111", email: "xxxx@gmail.com" },
-    { name: "XXXX", contact: "1111111111", email: "xxxx@gmail.com" },
-    { name: "XXXX", contact: "1111111111", email: "xxxx@gmail.com" },
-    { name: "XXXX", contact: "1111111111", email: "xxxx@gmail.com" }
+    { name: "Bhanupriya L", contact: "8431838832", email: "bhanupriyapriya14@gmail.com" },
+    { name: "Chaitanya MD", contact: "8088918746", email: "chaithanyamdgowda@gmail.com" },
+    { name: "Deekshitha", contact: "9019765221", email: "deekshas162720@gmail.com" },
+    { name: "Meghana CP", contact: "8867306119", email: "gowdameghana972@gmail.com" }
   ];
 
   return (
@@ -377,7 +377,7 @@ const AboutView = () => {
         <GlassCard title="PROJECT SPECIFICATIONS" icon={Info}>
           <div className="space-y-8">
             <div>
-               <h1 className="text-3xl font-bold text-white mb-2 font-sans">Birds Buddy <span className="text-blue-500">Mk. I</span></h1>
+               <h1 className="text-3xl font-bold text-white mb-2 font-sans">Birds<span className="font-bold text-slate-500">Buddy</span></h1>
                <p className="text-slate-400 text-sm leading-relaxed">
                  A fully autonomous, IoT-enabled avian life support system designed for urban environments.
                </p>
