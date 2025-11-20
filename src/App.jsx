@@ -377,8 +377,7 @@ const AboutView = () => {
         <GlassCard title="PROJECT SPECIFICATIONS" icon={Info}>
           <div className="space-y-8">
             <div>
-              <Radio className="w-4 h-4 text-white" />
-               <h1 className="text-3xl font-bold text-white mb-2 font-sans">Birds<span className="font-bold text-slate-500">Buddy</span></h1>
+               <h1 className="text-3xl font-bold text-white mb-2 font-sans"><Radio className="w-4 h-4 text-white" />Birds<span className="font-bold text-slate-500">Buddy</span></h1>
                <p className="text-slate-400 text-sm leading-relaxed">
                  A fully autonomous, IoT-enabled avian life support system designed for urban environments.
                </p>
