@@ -376,17 +376,7 @@ const AboutView = () => {
       <div className="space-y-6">
         <GlassCard title="PROJECT SPECIFICATIONS" icon={Info}>
           <div className="space-y-8">
-            <div>
-              
-             <div className="max-w-7xl mx-auto px-6 flex flex-col items-center justify-center gap-6">
-      <div className="flex items-center gap-3 opacity-80 hover:opacity-100 transition-opacity">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-slate-800 to-black border border-white/10 flex items-center justify-center shadow-lg">
-           <Radio className="w-4 h-4 text-white" />
-        </div>
-        </div>
-               </div>
-                
-                
+            <div>  
                <h1 className="text-3xl font-bold text-white mb-2 font-sans">Birds<span className="font-bold text-slate-500">Buddy</span></h1>
                <p className="text-slate-400 text-sm leading-relaxed">
                  A fully autonomous, IoT-enabled avian life support system designed for urban environments.
