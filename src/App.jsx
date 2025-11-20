@@ -29,15 +29,17 @@ const MAX_FOOD_CAPACITY_G = 1000;
 const MAX_WATER_CAPACITY_ML = 1000; 
 const LOW_LEVEL_THRESHOLD = 20; // Percentage
 
-// REPLACE WITH YOUR REAL KEYS
+// --- FIREBASE CONFIGURATION (User Provided) ---
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
+  apiKey: "AIzaSyAAmoUAtkf3jBSSQDsALHXhTF3nsWleR2c",
   authDomain: "birds-buddy.firebaseapp.com",
+  // I added this line manually. If it fails, check the URL in your Firebase Console -> Realtime Database tab.
   databaseURL: "https://birds-buddy-default-rtdb.firebaseio.com",
   projectId: "birds-buddy",
-  storageBucket: "birds-buddy.appspot.com",
-  messagingSenderId: "SENDER_ID",
-  appId: "APP_ID"
+  storageBucket: "birds-buddy.firebasestorage.app",
+  messagingSenderId: "1038628654968",
+  appId: "1:1038628654968:web:539441e3eb267b21d6c28d",
+  measurementId: "G-JRDJT37T12"
 };
 
 let app, db;
@@ -45,7 +47,7 @@ try {
   app = initializeApp(firebaseConfig);
   db = getDatabase(app);
 } catch (e) {
-  console.log("Running in offline simulation mode.");
+  console.error("Firebase Initialization Error:", e);
 }
 
 // --- 2. UTILS ---
