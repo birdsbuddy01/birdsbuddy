@@ -5,7 +5,8 @@ import {
   Wifi, Droplet, Wind, Activity, Server, Zap, 
   ShieldAlert, Menu, X, Radio, ChevronRight, Disc, Info,
   Terminal, ArrowUpRight, ShieldCheck, AlertTriangle, CheckCircle,
-  Thermometer, CloudRain, Users, Phone, Mail, User, Clock, Crosshair, Cpu
+  Thermometer, CloudRain, Users, Phone, Mail, User, Clock, Crosshair, Cpu,
+  Database
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -154,8 +155,8 @@ const Footer = () => (
         <span className="hover:text-blue-400 cursor-pointer transition-colors">Contact Command</span>
       </div>
       <div className="text-[10px] text-slate-600 font-mono uppercase tracking-[0.2em] text-center space-y-2">
-        <p>Â© 2024 Birds Buddy Systems. All Rights Reserved.</p>
-        <p className="opacity-50">Advanced Bio-Monitoring & Automata System â€¢ Mk. I</p>
+        <p>© 2024 Birds Buddy Systems. All Rights Reserved.</p>
+        <p className="opacity-50">Advanced Bio-Monitoring & Automata System • Mk. I</p>
       </div>
     </div>
   </footer>
@@ -250,7 +251,7 @@ const DashboardView = ({ data, isCritical }) => {
            <div className="space-y-4">
              <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
                 <div className="flex items-center gap-3"><Thermometer className="w-4 h-4 text-blue-400" /><span className="text-xs font-mono text-slate-300">TEMP</span></div>
-                <span className="text-sm font-bold text-white">{data.temperature}Â°C</span>
+                <span className="text-sm font-bold text-white">{data.temperature}°C</span>
              </div>
              <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
                 <div className="flex items-center gap-3"><CloudRain className="w-4 h-4 text-blue-400" /><span className="text-xs font-mono text-slate-300">HUMIDITY</span></div>
@@ -261,9 +262,7 @@ const DashboardView = ({ data, isCritical }) => {
                    {data.mq_gas_detected ? <AlertTriangle className="w-4 h-4 text-red-500 animate-spin" /> : <Wind className="w-4 h-4 text-slate-400" />}
                    <span className="text-[10px] font-mono text-slate-300 uppercase tracking-wider">Air Quality</span>
                 </div>
-                <span className={`text-[10px] font-bold px-2 py-1 rounded ${data.mq_gas_detected ? 'bg-red-500/20 text-red-400' : 'bg-green-500/10 text-green-400'}`}>
-                   {data.mq_gas_detected ? 'DANGER' : 'OPTIMAL'}
-                </span>
+                <span className={`text-[10px] font-bold px-2 py-1 rounded ${data.mq_gas_detected ? 'bg-red-500/20 text-red-400' : 'bg-green-500/10 text-green-400'}`}>{data.mq_gas_detected ? 'DANGER' : 'OPTIMAL'}</span>
              </div>
              <div className={`flex items-center justify-between p-3 rounded-lg border transition-all ${data.pir_motion_detected ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-white/5 border-transparent'}`}>
                 <div className="flex items-center gap-3">
@@ -635,15 +634,14 @@ export default function App() {
            </h1>
         </div>
         <div className="hidden md:flex items-center gap-2 p-1">
-           {['Dashboard', 'Controls', 'Analytics', 'Activity', 'About'].map((item) => {
-             const viewKey = item.toLowerCase();
-             return <NavItem key={item} label={item} active={currentView === viewKey} onClick={() => setCurrentView(viewKey)} />
-           })}
+           {['Dashboard', 'Controls', 'Analytics', 'Activity', 'About'].map((item) => (
+             <NavItem key={item} label={item} active={currentView === item.toLowerCase()} onClick={() => setCurrentView(item.toLowerCase())} />
+           ))}
         </div>
         <div className="flex items-center gap-4">
            <div className="hidden md:block text-right">
               <div className="text-xs font-mono text-slate-300">{data.timestamp}</div>
-              <div className="text-[9px] font-mono text-slate-600 uppercase tracking-widest">IST â€¢ {getISTDate()}</div>
+              <div className="text-[9px] font-mono text-slate-600 uppercase tracking-widest">IST • {getISTDate()}</div>
            </div>
            <button onClick={() => setIsMenuOpen(true)} className="md:hidden p-2 text-slate-300 hover:text-white">
               <Menu className="w-6 h-6" />
@@ -652,13 +650,9 @@ export default function App() {
       </nav>
 
       <div className={`fixed inset-0 z-50 bg-black/95 backdrop-blur-2xl transition-transform duration-500 flex flex-col justify-center items-center gap-6 ${isMenuOpen ? 'translate-y-0' : '-translate-y-full'}`}>
-         <button onClick={() => setIsMenuOpen(false)} className="absolute top-6 right-6 p-2 bg-white/10 rounded-full">
-            <X className="w-6 h-6" />
-         </button>
+         <button onClick={() => setIsMenuOpen(false)} className="absolute top-6 right-6 p-2 bg-white/10 rounded-full"><X className="w-6 h-6" /></button>
          {['Dashboard', 'Controls', 'Analytics', 'Activity', 'About'].map((item) => (
-            <button key={item} onClick={() => handleNavClick(item.toLowerCase())} className="text-2xl font-bold text-white tracking-widest uppercase hover:text-blue-500 transition-colors">
-              {item}
-            </button>
+            <button key={item} onClick={() => handleNavClick(item.toLowerCase())} className="text-2xl font-bold text-white tracking-widest uppercase hover:text-blue-500 transition-colors">{item}</button>
          ))}
       </div>
 
