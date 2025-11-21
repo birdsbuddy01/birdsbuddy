@@ -72,7 +72,8 @@ const Toast = ({ message, type, onClose }) => (
 );
 
 const GlassCard = ({ children, className = "", title, icon: Icon, statusColor, accentColor = "blue" }) => (
-  <div className={`relative overflow-hidden bg-[#0b0c10]/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 transition-all duration-500 hover:border-${accentColor}-500/30 hover:bg-[#0b0c10]/80 hover:shadow-[0_0_30px_-10px_rgba(59,130,246,0.15)] group ${className}`}>
+  <div className={`relative overflow-hidden bg-[#0b0c10]/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 transition-all duration-500 
+    hover:border-${accentColor}-500/30 hover:bg-[#0b0c10]/80 hover:shadow-[0_0_30px_-10px_rgba(59,130,246,0.15)] group ${className}`}>
     <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-white/10 transition-colors group-hover:border-blue-500/50" />
     <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-white/10 transition-colors group-hover:border-blue-500/50" />
     {title && (
@@ -201,6 +202,13 @@ const DashboardView = ({ data, isCritical }) => {
   const foodBowlStatus = data.food_weight_g > 10 ? "FILLED" : "EMPTY";
   const waterBowlStatus = data.water_bowl_wet ? "FILLED" : "EMPTY";
 
+  // Alert Text Logic
+  let alertText = "System Check Required";
+  if (data.mq_gas_detected) alertText = "Hazardous Atmosphere Detected";
+  else if (data.pir_motion_detected) alertText = "Perimeter Breach Detected";
+  else if (!data.water_bowl_wet) alertText = "Water Supply Critical";
+  else if (foodBowlStatus === "EMPTY") alertText = "Food Supply Critical";
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {isCritical && (
@@ -209,8 +217,7 @@ const DashboardView = ({ data, isCritical }) => {
           <div>
             <h2 className="text-xl font-bold text-white tracking-widest uppercase">System Alert Active</h2>
             <p className="text-red-400 font-mono uppercase tracking-wider text-xs mt-1">
-              {data.mq_gas_detected ? "Hazardous Atmosphere Detected" : 
-               data.pir_motion_detected ? "Perimeter Breach" : "System Check Required"}
+              {alertText}
             </p>
           </div>
         </div>
@@ -427,6 +434,7 @@ export default function App() {
     timestamp: getISTTime()
   });
   
+  const [currentTime, setCurrentTime] = useState(getISTTime()); // Live Clock State
   const [simulationMode, setSimulationMode] = useState(true);
   const [processing, setProcessing] = useState({ feed: false, refill: false });
   const [toast, setToast] = useState(null);
@@ -453,6 +461,12 @@ export default function App() {
     setToast({ message, type });
     setTimeout(() => setToast(null), 4000);
   };
+
+  // Live Clock Interval
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(getISTTime()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (db) {
@@ -640,7 +654,7 @@ export default function App() {
         </div>
         <div className="flex items-center gap-4">
            <div className="hidden md:block text-right">
-              <div className="text-xs font-mono text-slate-300">{data.timestamp}</div>
+              <div className="text-xs font-mono text-slate-300">{currentTime}</div>
               <div className="text-[9px] font-mono text-slate-600 uppercase tracking-widest">IST • {getISTDate()}</div>
            </div>
            <button onClick={() => setIsMenuOpen(true)} className="md:hidden p-2 text-slate-300 hover:text-white">
