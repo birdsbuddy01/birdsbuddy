@@ -1,13 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, onValue, set } from 'firebase/database';
+import { getDatabase, ref, onValue, set, query, limitToLast } from 'firebase/database';
 import { 
   Wifi, Droplet, Wind, Activity, Server, Zap, 
-  ShieldAlert, Menu, X, Radio, Cpu, Crosshair, 
-  ChevronRight, Disc, Home, Settings, List, Info,
-  Terminal, PlayCircle, Database, ArrowUpRight,
-  ShieldCheck, Clock, AlertTriangle, CheckCircle,
-  WifiOff, User, Bot, Users, Phone, Mail
+  ShieldAlert, Menu, X, Radio, ChevronRight, Disc, Info,
+  Terminal, ArrowUpRight, ShieldCheck, AlertTriangle, CheckCircle,
+  Thermometer, CloudRain, Users, Phone, Mail, User, Clock, Crosshair, Cpu
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -29,17 +27,15 @@ const MAX_FOOD_CAPACITY_G = 1000;
 const MAX_WATER_CAPACITY_ML = 1000; 
 const LOW_LEVEL_THRESHOLD = 20; // Percentage
 
-// --- FIREBASE CONFIGURATION (User Provided) ---
+// --- FIREBASE ---
 const firebaseConfig = {
-  apiKey: "AIzaSyAAmoUAtkf3jBSSQDsALHXhTF3nsWleR2c",
+  apiKey: "YOUR_API_KEY", // Replace with your keys!
   authDomain: "birds-buddy.firebaseapp.com",
-  // I added this line manually. If it fails, check the URL in your Firebase Console -> Realtime Database tab.
   databaseURL: "https://birds-buddy-default-rtdb.firebaseio.com",
   projectId: "birds-buddy",
-  storageBucket: "birds-buddy.firebasestorage.app",
-  messagingSenderId: "1038628654968",
-  appId: "1:1038628654968:web:539441e3eb267b21d6c28d",
-  measurementId: "G-JRDJT37T12"
+  storageBucket: "birds-buddy.appspot.com",
+  messagingSenderId: "SENDER_ID",
+  appId: "APP_ID"
 };
 
 let app, db;
@@ -47,7 +43,7 @@ try {
   app = initializeApp(firebaseConfig);
   db = getDatabase(app);
 } catch (e) {
-  console.error("Firebase Initialization Error:", e);
+  console.error("Firebase Init Error:", e);
 }
 
 // --- 2. UTILS ---
@@ -75,13 +71,9 @@ const Toast = ({ message, type, onClose }) => (
 );
 
 const GlassCard = ({ children, className = "", title, icon: Icon, statusColor, accentColor = "blue" }) => (
-  <div className={`relative overflow-hidden bg-[#0b0c10]/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 transition-all duration-500 
-    hover:border-${accentColor}-500/30 hover:bg-[#0b0c10]/80 hover:shadow-[0_0_30px_-10px_rgba(59,130,246,0.15)] group ${className}`}>
-    
-    {/* Tech Corner Accents */}
+  <div className={`relative overflow-hidden bg-[#0b0c10]/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 transition-all duration-500 hover:border-${accentColor}-500/30 hover:bg-[#0b0c10]/80 hover:shadow-[0_0_30px_-10px_rgba(59,130,246,0.15)] group ${className}`}>
     <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-white/10 transition-colors group-hover:border-blue-500/50" />
     <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-white/10 transition-colors group-hover:border-blue-500/50" />
-    
     {title && (
       <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-2">
         <div className="flex items-center gap-3">
@@ -156,16 +148,14 @@ const Footer = () => (
           BIRDS<span className="text-slate-500">BUDDY</span>
         </span>
       </div>
-      
       <div className="flex gap-6 text-[10px] font-mono uppercase tracking-widest text-slate-500">
         <span className="hover:text-blue-400 cursor-pointer transition-colors">Privacy Protocol</span>
         <span className="hover:text-blue-400 cursor-pointer transition-colors">System Status</span>
         <span className="hover:text-blue-400 cursor-pointer transition-colors">Contact Command</span>
       </div>
-
       <div className="text-[10px] text-slate-600 font-mono uppercase tracking-[0.2em] text-center space-y-2">
-        <p>© 2025 Birds Buddy Systems. All Rights Reserved.</p>
-        <p className="opacity-50">Advanced Bio-Monitoring & Automated System </p>
+        <p>Â© 2024 Birds Buddy Systems. All Rights Reserved.</p>
+        <p className="opacity-50">Advanced Bio-Monitoring & Automata System â€¢ Mk. I</p>
       </div>
     </div>
   </footer>
@@ -227,7 +217,7 @@ const DashboardView = ({ data, isCritical }) => {
 
       <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
         <GlassCard title="FOOD BOWL STATUS" icon={Disc} statusColor={foodBowlStatus === "FILLED" ? "text-green-400" : "text-red-500"}>
-          <StatValue value={foodBowlStatus} unit="" label="Load Cell Sensor" alert={foodBowlStatus === "EMPTY"}/>
+          <StatValue value={foodBowlStatus} unit="" label="Ultrasonic Monitor" alert={foodBowlStatus === "EMPTY"}/>
           <div className="mt-4 h-1 w-full bg-white/5 rounded-full overflow-hidden">
              <div className={`h-full transition-all duration-500 ${foodBowlStatus === "FILLED" ? 'bg-green-500 w-full' : 'bg-red-500 w-[5%]'}`} />
           </div>
@@ -258,6 +248,14 @@ const DashboardView = ({ data, isCritical }) => {
       <div className="lg:col-span-4 space-y-6">
         <GlassCard title="ENVIRONMENTAL" icon={Wind} statusColor={data.mq_gas_detected ? "text-red-500" : "text-green-500"}>
            <div className="space-y-4">
+             <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                <div className="flex items-center gap-3"><Thermometer className="w-4 h-4 text-blue-400" /><span className="text-xs font-mono text-slate-300">TEMP</span></div>
+                <span className="text-sm font-bold text-white">{data.temperature}Â°C</span>
+             </div>
+             <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                <div className="flex items-center gap-3"><CloudRain className="w-4 h-4 text-blue-400" /><span className="text-xs font-mono text-slate-300">HUMIDITY</span></div>
+                <span className="text-sm font-bold text-white">{data.humidity}%</span>
+             </div>
              <div className={`flex items-center justify-between p-3 rounded-lg border transition-all ${data.mq_gas_detected ? 'bg-red-500/10 border-red-500/30' : 'bg-white/5 border-transparent'}`}>
                 <div className="flex items-center gap-3">
                    {data.mq_gas_detected ? <AlertTriangle className="w-4 h-4 text-red-500 animate-spin" /> : <Wind className="w-4 h-4 text-slate-400" />}
@@ -372,12 +370,28 @@ const AboutView = () => {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="space-y-6">
-        <GlassCard title="PROJECT SPECIFICATIONS" icon={Info}>
+    <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4">
+      <GlassCard title="MISSION CREW" icon={Users} className="mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {teamMembers.map((member, i) => (
+            <div key={i} className="p-4 bg-white/5 rounded-lg border border-white/5 hover:border-blue-500/30 transition-colors">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400"><User className="w-4 h-4" /></div>
+                <h4 className="font-bold text-white tracking-wide">{member.name}</h4>
+              </div>
+              <div className="space-y-2 pl-11">
+                <div className="flex items-center gap-2 text-xs text-slate-400"><Phone className="w-3 h-3 text-slate-500" /><span className="font-mono">{member.contact}</span></div>
+                <div className="flex items-center gap-2 text-xs text-slate-400"><Mail className="w-3 h-3 text-slate-500" /><span className="font-mono">{member.email}</span></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </GlassCard>
+      
+      <GlassCard title="PROJECT SPECIFICATIONS" icon={Info}>
           <div className="space-y-8">
-            <div>  
-               <h1 className="text-3xl font-bold text-white mb-2 font-sans">Birds<span className="font-bold text-slate-500">Buddy</span></h1>
+            <div>
+               <h1 className="text-3xl font-bold text-white mb-2 font-sans">Birds Buddy <span className="text-blue-500">Mk. I</span></h1>
                <p className="text-slate-400 text-sm leading-relaxed">
                  A fully autonomous, IoT-enabled avian life support system designed for urban environments.
                </p>
@@ -393,33 +407,7 @@ const AboutView = () => {
                </div>
             </div>
           </div>
-        </GlassCard>
-
-        <GlassCard title="MISSION CREW" icon={Users}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {teamMembers.map((member, i) => (
-              <div key={i} className="p-4 bg-white/5 rounded-lg border border-white/5 hover:border-blue-500/30 transition-colors">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
-                    <User className="w-4 h-4" />
-                  </div>
-                  <h4 className="font-bold text-white tracking-wide">{member.name}</h4>
-                </div>
-                <div className="space-y-2 pl-11">
-                  <div className="flex items-center gap-2 text-xs text-slate-400">
-                    <Phone className="w-3 h-3 text-slate-500" />
-                    <span className="font-mono">{member.contact}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-slate-400">
-                    <Mail className="w-3 h-3 text-slate-500" />
-                    <span className="font-mono">{member.email}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </GlassCard>
-      </div>
+      </GlassCard>
     </div>
   );
 };
@@ -655,7 +643,7 @@ export default function App() {
         <div className="flex items-center gap-4">
            <div className="hidden md:block text-right">
               <div className="text-xs font-mono text-slate-300">{data.timestamp}</div>
-              <div className="text-[9px] font-mono text-slate-600 uppercase tracking-widest">IST • {getISTDate()}</div>
+              <div className="text-[9px] font-mono text-slate-600 uppercase tracking-widest">IST â€¢ {getISTDate()}</div>
            </div>
            <button onClick={() => setIsMenuOpen(true)} className="md:hidden p-2 text-slate-300 hover:text-white">
               <Menu className="w-6 h-6" />
