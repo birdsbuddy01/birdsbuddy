@@ -74,8 +74,11 @@ const Toast = ({ message, type, onClose }) => (
 const GlassCard = ({ children, className = "", title, icon: Icon, statusColor, accentColor = "blue" }) => (
   <div className={`relative overflow-hidden bg-[#0b0c10]/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 transition-all duration-500 
     hover:border-${accentColor}-500/30 hover:bg-[#0b0c10]/80 hover:shadow-[0_0_30px_-10px_rgba(59,130,246,0.15)] group ${className}`}>
+    
+    {/* Tech Corner Accents */}
     <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-white/10 transition-colors group-hover:border-blue-500/50" />
     <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-white/10 transition-colors group-hover:border-blue-500/50" />
+    
     {title && (
       <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-2">
         <div className="flex items-center gap-3">
@@ -150,14 +153,16 @@ const Footer = () => (
           BIRDS<span className="text-slate-500">BUDDY</span>
         </span>
       </div>
+      
       <div className="flex gap-6 text-[10px] font-mono uppercase tracking-widest text-slate-500">
         <span className="hover:text-blue-400 cursor-pointer transition-colors">Privacy Protocol</span>
         <span className="hover:text-blue-400 cursor-pointer transition-colors">System Status</span>
         <span className="hover:text-blue-400 cursor-pointer transition-colors">Contact Command</span>
       </div>
+
       <div className="text-[10px] text-slate-600 font-mono uppercase tracking-[0.2em] text-center space-y-2">
-        <p>© 2024 Birds Buddy Systems. All Rights Reserved.</p>
-        <p className="opacity-50">Advanced Bio-Monitoring & Automata System • Mk. I</p>
+        <p>Â© 2024 Birds Buddy Systems. All Rights Reserved.</p>
+        <p className="opacity-50">Advanced Bio-Monitoring & Automata System â€¢ Mk. I</p>
       </div>
     </div>
   </footer>
@@ -199,15 +204,15 @@ const DashboardView = ({ data, isCritical }) => {
   const foodGrams = Math.round((foodPct / 100) * MAX_FOOD_CAPACITY_G);
   const waterMl = Math.round((waterPct / 100) * MAX_WATER_CAPACITY_ML);
   
-  const foodBowlStatus = data.food_weight_g > 10 ? "FILLED" : "EMPTY";
+  const foodBowlStatus = data.food_weight_g > 10 ? "FILLED" : "EMPTY"; // Note: using food_weight_g for logic but display logic below
+  const foodStatusDisplay = data.food_bowl_full ? "FILLED" : "EMPTY";
   const waterBowlStatus = data.water_bowl_wet ? "FILLED" : "EMPTY";
 
-  // Alert Text Logic
   let alertText = "System Check Required";
   if (data.mq_gas_detected) alertText = "Hazardous Atmosphere Detected";
   else if (data.pir_motion_detected) alertText = "Perimeter Breach Detected";
   else if (!data.water_bowl_wet) alertText = "Water Supply Critical";
-  else if (foodBowlStatus === "EMPTY") alertText = "Food Supply Critical";
+  else if (foodStatusDisplay === "EMPTY") alertText = "Food Supply Critical";
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -224,17 +229,17 @@ const DashboardView = ({ data, isCritical }) => {
       )}
 
       <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-        <GlassCard title="FOOD BOWL STATUS" icon={Disc} statusColor={foodBowlStatus === "FILLED" ? "text-green-400" : "text-red-500"}>
-          <StatValue value={foodBowlStatus} unit="" label="Ultrasonic Monitor" alert={foodBowlStatus === "EMPTY"}/>
+        <GlassCard title="FOOD BOWL STATUS" icon={Disc} statusColor={data.food_bowl_full ? "text-green-400" : "text-red-500"}>
+          <StatValue value={foodStatusDisplay} unit="" label="Ultrasonic Monitor" alert={!data.food_bowl_full}/>
           <div className="mt-4 h-1 w-full bg-white/5 rounded-full overflow-hidden">
-             <div className={`h-full transition-all duration-500 ${foodBowlStatus === "FILLED" ? 'bg-green-500 w-full' : 'bg-red-500 w-[5%]'}`} />
+             <div className={`h-full transition-all duration-500 ${data.food_bowl_full ? 'bg-green-500 w-full' : 'bg-red-500 w-[5%]'}`} />
           </div>
         </GlassCard>
 
-        <GlassCard title="WATER BOWL STATUS" icon={Droplet} statusColor={waterBowlStatus === "FILLED" ? "text-blue-400" : "text-red-500"}>
-          <StatValue value={waterBowlStatus} unit="" label="XKC Liquid Sensor" alert={waterBowlStatus === "EMPTY"}/>
+        <GlassCard title="WATER BOWL STATUS" icon={Droplet} statusColor={data.water_bowl_wet ? "text-blue-400" : "text-red-500"}>
+          <StatValue value={waterBowlStatus} unit="" label="XKC Liquid Sensor" alert={!data.water_bowl_wet}/>
           <div className="mt-4 h-1 w-full bg-white/5 rounded-full overflow-hidden">
-             <div className={`h-full transition-all duration-500 ${waterBowlStatus === "FILLED" ? 'bg-blue-500 w-full' : 'bg-red-500 w-[5%]'}`} />
+             <div className={`h-full transition-all duration-500 ${data.water_bowl_wet ? 'bg-blue-500 w-full' : 'bg-red-500 w-[5%]'}`} />
           </div>
         </GlassCard>
 
@@ -258,7 +263,7 @@ const DashboardView = ({ data, isCritical }) => {
            <div className="space-y-4">
              <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
                 <div className="flex items-center gap-3"><Thermometer className="w-4 h-4 text-blue-400" /><span className="text-xs font-mono text-slate-300">TEMP</span></div>
-                <span className="text-sm font-bold text-white">{data.temperature}°C</span>
+                <span className="text-sm font-bold text-white">{data.temperature}Â°C</span>
              </div>
              <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
                 <div className="flex items-center gap-3"><CloudRain className="w-4 h-4 text-blue-400" /><span className="text-xs font-mono text-slate-300">HUMIDITY</span></div>
@@ -325,15 +330,56 @@ const ControlsView = ({ sendCommand, processing, data }) => (
   </div>
 );
 
-const AnalyticsView = ({ chartData, chartOptions }) => (
-  <div className="h-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-    <GlassCard title="FOOD STORAGE HISTORY (24H)" icon={Activity} className="h-[70vh]">
-      <div className="h-full w-full pb-8">
-        <Line data={chartData} options={{...chartOptions, maintainAspectRatio: false}} />
+const AnalyticsView = () => {
+  const [history, setHistory] = useState([]);
+  const [filter, setFilter] = useState(24);
+
+  useEffect(() => {
+    const historyRef = query(ref(db, 'history'), limitToLast(100));
+    onValue(historyRef, (snapshot) => {
+      const raw = snapshot.val();
+      if (raw) {
+        const arr = Object.values(raw).sort((a, b) => a.timestamp_full > b.timestamp_full ? 1 : -1);
+        setHistory(arr);
+      }
+    });
+  }, []);
+
+  const filteredData = history.slice(-filter * 12); 
+  const chartOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94a3b8', font: { family: 'Rajdhani' } } } }, scales: { x: { grid: { color: '#ffffff05' }, ticks: { color: '#64748b' } }, y: { grid: { color: '#ffffff05' }, ticks: { color: '#64748b' } } } };
+
+  const resData = {
+    labels: filteredData.map(d => d.timestamp),
+    datasets: [
+      { label: 'Food %', data: filteredData.map(d => d.food_reservoir_pct), borderColor: '#fbbf24', backgroundColor: 'rgba(251, 191, 36, 0.1)', tension: 0.4 },
+      { label: 'Water %', data: filteredData.map(d => d.water_reservoir_pct), borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', tension: 0.4 }
+    ]
+  };
+
+  const envData = {
+    labels: filteredData.map(d => d.timestamp),
+    datasets: [
+      { label: 'Temp (Â°C)', data: filteredData.map(d => d.temperature), borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', tension: 0.4 },
+      { label: 'Humidity (%)', data: filteredData.map(d => d.humidity), borderColor: '#06b6d4', backgroundColor: 'rgba(6, 182, 212, 0.1)', tension: 0.4 }
+    ]
+  };
+
+  return (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="flex gap-2 mb-4">
+        {[1, 6, 12, 24].map(h => (
+          <button key={h} onClick={() => setFilter(h)} className={`px-3 py-1 rounded text-xs font-bold border ${filter === h ? 'bg-blue-600 text-white border-blue-500' : 'bg-transparent text-slate-500 border-white/10'}`}>{h}H</button>
+        ))}
       </div>
-    </GlassCard>
-  </div>
-);
+      <GlassCard title="RESERVOIR LEVELS" icon={Activity} className="h-[40vh]">
+        <div className="h-full w-full pb-4"><Line data={resData} options={chartOptions} /></div>
+      </GlassCard>
+      <GlassCard title="ATMOSPHERIC CONDITIONS" icon={Wind} className="h-[40vh]">
+        <div className="h-full w-full pb-4"><Line data={envData} options={chartOptions} /></div>
+      </GlassCard>
+    </div>
+  );
+};
 
 const ActivityView = ({ logs }) => (
   <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -345,20 +391,9 @@ const ActivityView = ({ logs }) => (
                  <span className="text-slate-600 min-w-[120px]">{log.time}</span>
                  <div className="flex-1">
                    {log.badge && (
-                     <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded mr-2 uppercase ${
-                       log.badge === 'MANUAL' ? 'bg-purple-500/20 text-purple-400' : 'bg-slate-500/20 text-slate-400'
-                     }`}>
-                       {log.badge}
-                     </span>
+                     <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded mr-2 uppercase ${log.badge === 'MANUAL' ? 'bg-purple-500/20 text-purple-400' : 'bg-slate-500/20 text-slate-400'}`}>{log.badge}</span>
                    )}
-                   <span className={
-                     log.type === 'danger' ? 'text-red-400' : 
-                     log.type === 'warning' ? 'text-yellow-400' : 
-                     log.type === 'success' ? 'text-green-400' : 
-                     'text-slate-300'
-                   }>
-                       {log.message}
-                   </span>
+                   <span className={log.type === 'danger' ? 'text-red-400' : log.type === 'warning' ? 'text-yellow-400' : log.type === 'success' ? 'text-green-400' : 'text-slate-300'}>{log.message}</span>
                  </div>
              </div>
          ))}
@@ -434,7 +469,6 @@ export default function App() {
     timestamp: getISTTime()
   });
   
-  const [currentTime, setCurrentTime] = useState(getISTTime()); // Live Clock State
   const [simulationMode, setSimulationMode] = useState(true);
   const [processing, setProcessing] = useState({ feed: false, refill: false });
   const [toast, setToast] = useState(null);
@@ -461,12 +495,6 @@ export default function App() {
     setToast({ message, type });
     setTimeout(() => setToast(null), 4000);
   };
-
-  // Live Clock Interval
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(getISTTime()), 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   useEffect(() => {
     if (db) {
@@ -654,8 +682,8 @@ export default function App() {
         </div>
         <div className="flex items-center gap-4">
            <div className="hidden md:block text-right">
-              <div className="text-xs font-mono text-slate-300">{currentTime}</div>
-              <div className="text-[9px] font-mono text-slate-600 uppercase tracking-widest">IST • {getISTDate()}</div>
+              <div className="text-xs font-mono text-slate-300">{data.timestamp}</div>
+              <div className="text-[9px] font-mono text-slate-600 uppercase tracking-widest">IST â€¢ {getISTDate()}</div>
            </div>
            <button onClick={() => setIsMenuOpen(true)} className="md:hidden p-2 text-slate-300 hover:text-white">
               <Menu className="w-6 h-6" />
@@ -666,7 +694,9 @@ export default function App() {
       <div className={`fixed inset-0 z-50 bg-black/95 backdrop-blur-2xl transition-transform duration-500 flex flex-col justify-center items-center gap-6 ${isMenuOpen ? 'translate-y-0' : '-translate-y-full'}`}>
          <button onClick={() => setIsMenuOpen(false)} className="absolute top-6 right-6 p-2 bg-white/10 rounded-full"><X className="w-6 h-6" /></button>
          {['Dashboard', 'Controls', 'Analytics', 'Activity', 'About'].map((item) => (
-            <button key={item} onClick={() => handleNavClick(item.toLowerCase())} className="text-2xl font-bold text-white tracking-widest uppercase hover:text-blue-500 transition-colors">{item}</button>
+            <button key={item} onClick={() => handleNavClick(item.toLowerCase())} className="text-2xl font-bold text-white tracking-widest uppercase hover:text-blue-500 transition-colors">
+              {item}
+            </button>
          ))}
       </div>
 
