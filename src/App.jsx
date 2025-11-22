@@ -5,8 +5,7 @@ import {
   Wifi, Droplet, Wind, Activity, Server, Zap, 
   ShieldAlert, Menu, X, Radio, ChevronRight, Disc, Info,
   Terminal, ArrowUpRight, ShieldCheck, AlertTriangle, CheckCircle,
-  Thermometer, CloudRain, Users, Phone, Mail, User, Clock, Crosshair, Cpu,
-  Database
+  Thermometer, CloudRain, Users, Phone, Mail, User, Database, Clock
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -79,7 +78,6 @@ const GlassCard = ({ children, className = "", title, icon: Icon, statusColor, a
   <div className={`relative overflow-hidden bg-[#0b0c10]/60 backdrop-blur-md border border-white/5 rounded-2xl p-6 transition-all duration-500 
     hover:border-${accentColor}-500/30 hover:bg-[#0b0c10]/80 hover:shadow-[0_0_30px_-10px_rgba(59,130,246,0.15)] group ${className}`}>
     
-    {/* Tech Corner Accents */}
     <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-white/10 transition-colors group-hover:border-blue-500/50" />
     <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-white/10 transition-colors group-hover:border-blue-500/50" />
     
@@ -100,7 +98,8 @@ const StatValue = ({ value, unit, label, alert, subValue }) => (
   <div className="flex flex-col">
     <div className="flex items-end gap-1">
       <span className={`text-4xl md:text-5xl font-bold tracking-tighter leading-none ${alert ? 'text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.4)]' : 'text-white'}`}>
-        {value}
+        {/* Ensure value is a primitive string or number */}
+        {typeof value === 'object' ? JSON.stringify(value) : value}
       </span>
       <span className="text-sm text-slate-500 font-mono mb-1">{unit}</span>
     </div>
@@ -165,8 +164,8 @@ const Footer = () => (
       </div>
 
       <div className="text-[10px] text-slate-600 font-mono uppercase tracking-[0.2em] text-center space-y-2">
-        <p>Â© 2024 Birds Buddy Systems. All Rights Reserved.</p>
-        <p className="opacity-50">Advanced Bio-Monitoring & Automata System â€¢ Mk. I</p>
+        <p>© 2024 Birds Buddy Systems. All Rights Reserved.</p>
+        <p className="opacity-50">Advanced Bio-Monitoring & Automata System • Mk. I</p>
       </div>
     </div>
   </footer>
@@ -209,13 +208,13 @@ const DashboardView = ({ data, isCritical }) => {
   const waterMl = Math.round((waterPct / 100) * MAX_WATER_CAPACITY_ML);
   
   const foodBowlStatus = data.food_bowl_full ? "FILLED" : "EMPTY";
-  const waterBowlStatus = data.water_bowl_wet ? "FILLED" : "EMPTY";
+  const waterBowlStatus = data.water_bowl_full ? "FILLED" : "EMPTY";
 
   let alertText = "System Check Required";
   if (data.mq_gas_detected) alertText = "Hazardous Atmosphere Detected";
   else if (data.pir_motion_detected) alertText = "Perimeter Breach Detected";
-  else if (!data.water_bowl_wet) alertText = "Water Supply Critical";
-  else if (foodBowlStatus === "EMPTY") alertText = "Food Supply Critical";
+  else if (!data.water_bowl_full) alertText = "Water Supply Critical";
+  else if (!data.food_bowl_full) alertText = "Food Supply Critical";
   else if (data.error_food) alertText = "Food Dispenser Jammed/Empty";
   else if (data.error_water) alertText = "Water Pump Failure";
 
@@ -241,10 +240,10 @@ const DashboardView = ({ data, isCritical }) => {
           </div>
         </GlassCard>
 
-        <GlassCard title="WATER BOWL STATUS" icon={Droplet} statusColor={data.water_bowl_wet ? "text-blue-400" : "text-red-500"}>
-          <StatValue value={waterBowlStatus} unit="" label={data.error_water ? "ERROR: PUMP FAILURE" : "XKC Liquid Sensor"} alert={!data.water_bowl_wet || data.error_water}/>
+        <GlassCard title="WATER BOWL STATUS" icon={Droplet} statusColor={data.water_bowl_full ? "text-blue-400" : "text-red-500"}>
+          <StatValue value={waterBowlStatus} unit="" label={data.error_water ? "ERROR: PUMP FAILURE" : "XKC Liquid Sensor"} alert={!data.water_bowl_full || data.error_water}/>
           <div className="mt-4 h-1 w-full bg-white/5 rounded-full overflow-hidden">
-             <div className={`h-full transition-all duration-500 ${data.water_bowl_wet ? 'bg-blue-500 w-full' : 'bg-red-500 w-[5%]'}`} />
+             <div className={`h-full transition-all duration-500 ${data.water_bowl_full ? 'bg-blue-500 w-full' : 'bg-red-500 w-[5%]'}`} />
           </div>
         </GlassCard>
 
@@ -268,7 +267,7 @@ const DashboardView = ({ data, isCritical }) => {
            <div className="space-y-4">
              <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
                 <div className="flex items-center gap-3"><Thermometer className="w-4 h-4 text-blue-400" /><span className="text-xs font-mono text-slate-300">TEMP</span></div>
-                <span className="text-sm font-bold text-white">{data.temperature}Â°C</span>
+                <span className="text-sm font-bold text-white">{data.temperature}°C</span>
              </div>
              <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
                 <div className="flex items-center gap-3"><CloudRain className="w-4 h-4 text-blue-400" /><span className="text-xs font-mono text-slate-300">HUMIDITY</span></div>
@@ -335,15 +334,74 @@ const ControlsView = ({ sendCommand, processing, data }) => (
   </div>
 );
 
-const AnalyticsView = ({ chartData, chartOptions }) => (
-  <div className="h-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-    <GlassCard title="FOOD STORAGE HISTORY (24H)" icon={Activity} className="h-[70vh]">
-      <div className="h-full w-full pb-8">
-        <Line data={chartData} options={{...chartOptions, maintainAspectRatio: false}} />
+const AnalyticsView = () => {
+  const [history, setHistory] = useState([]);
+  const [filter, setFilter] = useState(24);
+
+  useEffect(() => {
+    const historyRef = query(ref(db, 'history'), limitToLast(100));
+    onValue(historyRef, (snapshot) => {
+      const raw = snapshot.val();
+      if (raw) {
+        // Sort by timestamp
+        const arr = Object.values(raw).sort((a, b) => a.timestamp_full > b.timestamp_full ? 1 : -1);
+        setHistory(arr);
+      }
+    });
+  }, []);
+
+  const filteredData = history.slice(-filter * 12); 
+
+  const chartOptions = { 
+      responsive: true, 
+      maintainAspectRatio: false, 
+      plugins: { legend: { labels: { color: '#94a3b8', font: { family: 'Rajdhani' } } } }, 
+      scales: { x: { grid: { color: '#ffffff05' }, ticks: { color: '#64748b' } }, y: { grid: { color: '#ffffff05' }, ticks: { color: '#64748b' } } } 
+  };
+
+  const resData = {
+    labels: filteredData.map(d => d.timestamp),
+    datasets: [
+      { label: 'Food %', data: filteredData.map(d => d.food_reservoir_pct), borderColor: '#fbbf24', backgroundColor: 'rgba(251, 191, 36, 0.1)', tension: 0.4 },
+      { label: 'Water %', data: filteredData.map(d => d.water_reservoir_pct), borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', tension: 0.4 }
+    ]
+  };
+
+  const envData = {
+    labels: filteredData.map(d => d.timestamp),
+    datasets: [
+      { label: 'Temp (°C)', data: filteredData.map(d => d.temperature), borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', tension: 0.4 },
+      { label: 'Humidity (%)', data: filteredData.map(d => d.humidity), borderColor: '#06b6d4', backgroundColor: 'rgba(6, 182, 212, 0.1)', tension: 0.4 }
+    ]
+  };
+
+  if (history.length === 0) {
+    return (
+      <div className="h-[60vh] w-full flex items-center justify-center animate-in fade-in">
+         <div className="text-center space-y-4">
+            <Activity className="w-12 h-12 text-slate-600 mx-auto animate-pulse" />
+            <p className="text-slate-500 font-mono tracking-widest">WAITING FOR DATA STREAM...</p>
+         </div>
       </div>
-    </GlassCard>
-  </div>
-);
+    );
+  }
+
+  return (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="flex gap-2 mb-4">
+        {[1, 6, 12, 24].map(h => (
+          <button key={h} onClick={() => setFilter(h)} className={`px-3 py-1 rounded text-xs font-bold border ${filter === h ? 'bg-blue-600 text-white border-blue-500' : 'bg-transparent text-slate-500 border-white/10'}`}>{h}H</button>
+        ))}
+      </div>
+      <GlassCard title="RESERVOIR LEVELS" icon={Activity} className="h-[40vh]">
+        <div className="h-full w-full pb-4"><Line data={resData} options={chartOptions} /></div>
+      </GlassCard>
+      <GlassCard title="ATMOSPHERIC CONDITIONS" icon={Wind} className="h-[40vh]">
+        <div className="h-full w-full pb-4"><Line data={envData} options={chartOptions} /></div>
+      </GlassCard>
+    </div>
+  );
+};
 
 const ActivityView = ({ logs }) => (
   <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -356,7 +414,9 @@ const ActivityView = ({ logs }) => (
                  <div className="flex-1">
                    {log.badge && (
                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded mr-2 uppercase ${
-                       log.badge === 'MANUAL' ? 'bg-purple-500/20 text-purple-400' : 'bg-slate-500/20 text-slate-400'
+                       log.badge === 'MANUAL' ? 'bg-purple-500/20 text-purple-400' : 
+                       log.badge === 'AUTO' ? 'bg-blue-500/20 text-blue-400' : 
+                       'bg-slate-500/20 text-slate-400'
                      }`}>
                        {log.badge}
                      </span>
@@ -449,39 +509,32 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [logs, setLogs] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
+  const [currentTime, setCurrentTime] = useState(getISTTime());
+  const [lastPacketTime, setLastPacketTime] = useState(Date.now());
 
   const prevData = useRef(data);
   const manualOverride = useRef(null);
 
-  const isCritical = data.mq_gas_detected || data.pir_motion_detected || !data.water_bowl_wet || data.error_food || data.error_water;
-
-  const addLog = (message, type = 'info', badge = null) => {
-    const newLog = {
-      id: Date.now(),
-      time: getISTDate() + ' ' + getISTTime(),
-      message,
-      type,
-      badge
-    };
-    setLogs(prev => [newLog, ...prev].slice(0, 50)); 
-  };
+  const isCritical = data.mq_gas_detected || data.pir_motion_detected || !data.water_bowl_full || data.error_food || data.error_water;
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 4000);
   };
 
+  // Live Clock
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(getISTTime()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Data Sync
   useEffect(() => {
     if (db) {
       const connectedRef = ref(db, '.info/connected');
       onValue(connectedRef, (snap) => {
-        if (snap.val() === true) {
-          if (!isConnected) addLog("Telemetry uplink established", "success");
-          setIsConnected(true);
-        } else {
-          if (isConnected) addLog("Telemetry uplink lost", "error");
-          setIsConnected(false);
-        }
+        if (snap.val() === true) setIsConnected(true);
+        else setIsConnected(false);
       });
 
       const sensorRef = ref(db, 'sensors');
@@ -490,77 +543,25 @@ export default function App() {
         if (val) {
           setSimulationMode(false); 
           setData(val);
+          setLastPacketTime(Date.now());
         }
       });
-    } else {
-      addLog("System initializing in simulation mode", "info");
     }
   }, []);
 
-  // Event Intelligence Logger
+  // Monitor Data Stale Status
+  const isLive = (Date.now() - lastPacketTime) < 15000; // 15s threshold
+
+  // Event Listener for Toast (Local UI feedback only)
   useEffect(() => {
     const curr = data;
     const prev = prevData.current;
     
-    // Pump Manual vs Auto
-    if (curr.pump_active && !prev.pump_active) {
-      const isManual = manualOverride.current === 'refill';
-      addLog("Water Pump Engaged", "info", isManual ? "MANUAL" : "AUTO");
-      manualOverride.current = null; 
-    }
-
-    if (curr.mq_gas_detected && !prev.mq_gas_detected) {
-      addLog("HAZARDOUS GAS DETECTED - SAFETY PROTOCOL ACTIVE", "danger");
-      showToast("CRITICAL: GAS DETECTED", "error");
-    } else if (!curr.mq_gas_detected && prev.mq_gas_detected) {
-      addLog("Atmosphere normalized. Safety protocol disengaged.", "success");
-    }
-
-    if (curr.pir_motion_detected && !prev.pir_motion_detected) {
-      addLog("Motion detected in secure perimeter", "warning");
-      showToast("ALERT: MOTION DETECTED", "error");
-    }
-
-    if (curr.food_reservoir_pct < LOW_LEVEL_THRESHOLD && prev.food_reservoir_pct >= LOW_LEVEL_THRESHOLD) {
-      addLog("Food reserves critical (<20%)", "warning");
-    }
-    if (curr.water_reservoir_pct < LOW_LEVEL_THRESHOLD && prev.water_reservoir_pct >= LOW_LEVEL_THRESHOLD) {
-      addLog("Water reserves critical (<20%)", "warning");
-    }
-
-    // Error Flags
-    if (curr.error_food && !prev.error_food) addLog("Food Dispenser Error: Jammed or Empty", "danger");
-    if (curr.error_water && !prev.error_water) addLog("Water System Error: Pump Failure", "danger");
-
+    if (curr.mq_gas_detected && !prev.mq_gas_detected) showToast("CRITICAL: GAS DETECTED", "error");
+    if (curr.pir_motion_detected && !prev.pir_motion_detected) showToast("ALERT: MOTION DETECTED", "error");
+    
     prevData.current = curr;
   }, [data]);
-
-  // Simulation Loop (Fallback)
-  useEffect(() => {
-    if (simulationMode) {
-      const interval = setInterval(() => {
-        setData(prev => {
-          const newGas = Math.random() > 0.995;
-          const newMotion = Math.random() > 0.98;
-          const newPump = Math.random() > 0.95; 
-          
-          if (prev.pump_active && Math.random() > 0.8) return { ...prev, pump_active: false };
-          
-          return {
-            ...prev,
-            food_weight_g: Math.max(0, (prev.food_weight_g || 450) - 0.2),
-            food_reservoir_pct: Math.max(0, (prev.food_reservoir_pct || 100) - 0.05),
-            water_reservoir_pct: Math.max(0, (prev.water_reservoir_pct || 100) - 0.08),
-            pir_motion_detected: newMotion,
-            mq_gas_detected: newGas,
-            pump_active: prev.pump_active || newPump,
-            timestamp: getISTTime()
-          };
-        });
-      }, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [simulationMode]);
 
   const sendCommand = (cmd) => {
     const key = cmd === 'feed_now' ? 'feed' : 'refill';
@@ -573,78 +574,29 @@ export default function App() {
       set(ref(db, 'commands/' + cmd), true)
         .then(() => {
            showToast(`${actionName} INITIATED`, 'success');
-           if (cmd === 'feed_now') addLog("Ration dispensed successfully", "success", "MANUAL");
         })
         .catch((err) => {
            showToast(`ERROR: ${actionName} FAILED`, 'error');
-           addLog(`Command failed: ${err.message}`, "error");
         })
         .finally(() => {
            setTimeout(() => setProcessing(p => ({ ...p, [key]: false })), 2000);
         });
     } else {
-      // Simulation
       setTimeout(() => {
         setProcessing(p => ({ ...p, [key]: false }));
-        if (cmd === 'refill_now') setData(d => ({ ...d, water_bowl_wet: true, pump_active: true }));
+        if (cmd === 'refill_now') setData(d => ({ ...d, water_bowl_full: true, pump_active: true }));
         if (cmd === 'feed_now') {
            setData(d => ({ ...d, food_weight_g: d.food_weight_g + 50 }));
-           addLog("Ration dispensed successfully", "success", "MANUAL");
         }
         showToast(`SIMULATION: ${actionName} CONFIRMED`, 'success');
       }, 1500);
     }
   };
 
-  const hours = Array.from({length: 24}, (_, i) => {
-      const d = new Date();
-      d.setHours(d.getHours() - (23 - i));
-      return d.getHours() + ":00";
-  });
-  const historyData = Array.from({length: 24}, (_, i) => 100 - (i * 2) + Math.random() * 5);
-
-  const chartData = {
-    labels: hours,
-    datasets: [{
-      fill: true,
-      label: 'Food Storage (%)',
-      data: historyData,
-      borderColor: '#60a5fa',
-      backgroundColor: (context) => {
-        const ctx = context.chart.ctx;
-        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-        gradient.addColorStop(0, 'rgba(96, 165, 250, 0.3)');
-        gradient.addColorStop(1, 'rgba(96, 165, 250, 0)');
-        return gradient;
-      },
-      tension: 0.4,
-      pointRadius: 2,
-      borderWidth: 2
-    }]
-  };
-
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { grid: { color: '#ffffff05' }, ticks: { color: '#64748b', maxTicksLimit: 8 } },
-      y: { grid: { color: '#ffffff05' }, ticks: { color: '#64748b' } }
-    },
-    animation: { duration: 0 }
-  };
-
   const handleNavClick = (view) => {
     setCurrentView(view);
     setIsMenuOpen(false);
   };
-
-  // Live Clock
-  const [currentTime, setCurrentTime] = useState(getISTTime());
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(getISTTime()), 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   return (
     <div className="min-h-screen bg-black text-slate-200 font-sans selection:bg-blue-500/30 overflow-x-hidden flex flex-col">
@@ -671,10 +623,20 @@ export default function App() {
              return <NavItem key={item} label={item} active={currentView === viewKey} onClick={() => setCurrentView(viewKey)} />
            })}
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
+           {/* Live Status Indicator */}
+           <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10">
+              <div className={`w-2 h-2 rounded-full animate-pulse ${isLive ? 'bg-green-500' : 'bg-red-500'}`} />
+              <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400">
+                 {isLive ? 'LIVE FEED' : 'OFFLINE'}
+              </span>
+           </div>
+           
            <div className="hidden md:block text-right">
               <div className="text-xs font-mono text-slate-300">{currentTime}</div>
-              <div className="text-[9px] font-mono text-slate-600 uppercase tracking-widest">IST â€¢ {getISTDate()}</div>
+              <div className="text-[9px] font-mono text-slate-600 uppercase tracking-widest">
+                 LAST PKT: {data.timestamp}
+              </div>
            </div>
            <button onClick={() => setIsMenuOpen(true)} className="md:hidden p-2 text-slate-300 hover:text-white">
               <Menu className="w-6 h-6" />
@@ -695,7 +657,7 @@ export default function App() {
          {currentView === 'hero' && <HeroView setView={setCurrentView} />}
          {currentView === 'dashboard' && <DashboardView data={data} isCritical={isCritical} />}
          {currentView === 'controls' && <ControlsView sendCommand={sendCommand} processing={processing} data={data} />}
-         {currentView === 'analytics' && <AnalyticsView chartData={chartData} chartOptions={chartOptions} />}
+         {currentView === 'analytics' && <AnalyticsView />}
          {currentView === 'activity' && <ActivityView logs={logs} />}
          {currentView === 'about' && <AboutView />}
          <Footer />
