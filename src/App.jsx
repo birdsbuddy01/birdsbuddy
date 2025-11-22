@@ -17,20 +17,24 @@ import {
   Title,
   Tooltip,
   Filler,
-  BarElement
+  BarElement,
+  Legend
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 
 // --- 1. CONFIGURATION ---
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler, BarElement);
+ChartJS.register(
+  CategoryScale, LinearScale, PointElement, LineElement, 
+  Title, Tooltip, Filler, BarElement, Legend
+);
 
 const MAX_FOOD_CAPACITY_G = 1000; 
 const MAX_WATER_CAPACITY_ML = 1000; 
 const LOW_LEVEL_THRESHOLD = 20; // Percentage
 
-// --- FIREBASE ---
+// REPLACE WITH YOUR REAL KEYS
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY", // Replace with your keys!
+  apiKey: "YOUR_API_KEY", 
   authDomain: "birds-buddy.firebaseapp.com",
   databaseURL: "https://birds-buddy-default-rtdb.firebaseio.com",
   projectId: "birds-buddy",
@@ -204,15 +208,16 @@ const DashboardView = ({ data, isCritical }) => {
   const foodGrams = Math.round((foodPct / 100) * MAX_FOOD_CAPACITY_G);
   const waterMl = Math.round((waterPct / 100) * MAX_WATER_CAPACITY_ML);
   
-  const foodBowlStatus = data.food_weight_g > 10 ? "FILLED" : "EMPTY"; // Note: using food_weight_g for logic but display logic below
-  const foodStatusDisplay = data.food_bowl_full ? "FILLED" : "EMPTY";
+  const foodBowlStatus = data.food_bowl_full ? "FILLED" : "EMPTY";
   const waterBowlStatus = data.water_bowl_wet ? "FILLED" : "EMPTY";
 
   let alertText = "System Check Required";
   if (data.mq_gas_detected) alertText = "Hazardous Atmosphere Detected";
   else if (data.pir_motion_detected) alertText = "Perimeter Breach Detected";
   else if (!data.water_bowl_wet) alertText = "Water Supply Critical";
-  else if (foodStatusDisplay === "EMPTY") alertText = "Food Supply Critical";
+  else if (foodBowlStatus === "EMPTY") alertText = "Food Supply Critical";
+  else if (data.error_food) alertText = "Food Dispenser Jammed/Empty";
+  else if (data.error_water) alertText = "Water Pump Failure";
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -230,14 +235,14 @@ const DashboardView = ({ data, isCritical }) => {
 
       <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
         <GlassCard title="FOOD BOWL STATUS" icon={Disc} statusColor={data.food_bowl_full ? "text-green-400" : "text-red-500"}>
-          <StatValue value={foodStatusDisplay} unit="" label="Ultrasonic Monitor" alert={!data.food_bowl_full}/>
+          <StatValue value={foodBowlStatus} unit="" label={data.error_food ? "ERROR: JAMMED/EMPTY" : "Ultrasonic Monitor"} alert={!data.food_bowl_full || data.error_food}/>
           <div className="mt-4 h-1 w-full bg-white/5 rounded-full overflow-hidden">
              <div className={`h-full transition-all duration-500 ${data.food_bowl_full ? 'bg-green-500 w-full' : 'bg-red-500 w-[5%]'}`} />
           </div>
         </GlassCard>
 
         <GlassCard title="WATER BOWL STATUS" icon={Droplet} statusColor={data.water_bowl_wet ? "text-blue-400" : "text-red-500"}>
-          <StatValue value={waterBowlStatus} unit="" label="XKC Liquid Sensor" alert={!data.water_bowl_wet}/>
+          <StatValue value={waterBowlStatus} unit="" label={data.error_water ? "ERROR: PUMP FAILURE" : "XKC Liquid Sensor"} alert={!data.water_bowl_wet || data.error_water}/>
           <div className="mt-4 h-1 w-full bg-white/5 rounded-full overflow-hidden">
              <div className={`h-full transition-all duration-500 ${data.water_bowl_wet ? 'bg-blue-500 w-full' : 'bg-red-500 w-[5%]'}`} />
           </div>
@@ -330,70 +335,40 @@ const ControlsView = ({ sendCommand, processing, data }) => (
   </div>
 );
 
-const AnalyticsView = () => {
-  const [history, setHistory] = useState([]);
-  const [filter, setFilter] = useState(24);
-
-  useEffect(() => {
-    const historyRef = query(ref(db, 'history'), limitToLast(100));
-    onValue(historyRef, (snapshot) => {
-      const raw = snapshot.val();
-      if (raw) {
-        const arr = Object.values(raw).sort((a, b) => a.timestamp_full > b.timestamp_full ? 1 : -1);
-        setHistory(arr);
-      }
-    });
-  }, []);
-
-  const filteredData = history.slice(-filter * 12); 
-  const chartOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94a3b8', font: { family: 'Rajdhani' } } } }, scales: { x: { grid: { color: '#ffffff05' }, ticks: { color: '#64748b' } }, y: { grid: { color: '#ffffff05' }, ticks: { color: '#64748b' } } } };
-
-  const resData = {
-    labels: filteredData.map(d => d.timestamp),
-    datasets: [
-      { label: 'Food %', data: filteredData.map(d => d.food_reservoir_pct), borderColor: '#fbbf24', backgroundColor: 'rgba(251, 191, 36, 0.1)', tension: 0.4 },
-      { label: 'Water %', data: filteredData.map(d => d.water_reservoir_pct), borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', tension: 0.4 }
-    ]
-  };
-
-  const envData = {
-    labels: filteredData.map(d => d.timestamp),
-    datasets: [
-      { label: 'Temp (Â°C)', data: filteredData.map(d => d.temperature), borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', tension: 0.4 },
-      { label: 'Humidity (%)', data: filteredData.map(d => d.humidity), borderColor: '#06b6d4', backgroundColor: 'rgba(6, 182, 212, 0.1)', tension: 0.4 }
-    ]
-  };
-
-  return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex gap-2 mb-4">
-        {[1, 6, 12, 24].map(h => (
-          <button key={h} onClick={() => setFilter(h)} className={`px-3 py-1 rounded text-xs font-bold border ${filter === h ? 'bg-blue-600 text-white border-blue-500' : 'bg-transparent text-slate-500 border-white/10'}`}>{h}H</button>
-        ))}
+const AnalyticsView = ({ chartData, chartOptions }) => (
+  <div className="h-full animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <GlassCard title="FOOD STORAGE HISTORY (24H)" icon={Activity} className="h-[70vh]">
+      <div className="h-full w-full pb-8">
+        <Line data={chartData} options={{...chartOptions, maintainAspectRatio: false}} />
       </div>
-      <GlassCard title="RESERVOIR LEVELS" icon={Activity} className="h-[40vh]">
-        <div className="h-full w-full pb-4"><Line data={resData} options={chartOptions} /></div>
-      </GlassCard>
-      <GlassCard title="ATMOSPHERIC CONDITIONS" icon={Wind} className="h-[40vh]">
-        <div className="h-full w-full pb-4"><Line data={envData} options={chartOptions} /></div>
-      </GlassCard>
-    </div>
-  );
-};
+    </GlassCard>
+  </div>
+);
 
 const ActivityView = ({ logs }) => (
   <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
     <GlassCard title="SYSTEM EVENT LOG" icon={Terminal} className="font-mono text-xs">
       <div className="space-y-2 text-slate-400 h-[60vh] overflow-y-auto pr-4 custom-scrollbar">
          {logs.length === 0 && <div className="text-center text-slate-600 mt-10">NO ACTIVITY RECORDED</div>}
-         {logs.map((log) => (
-             <div key={log.id} className="flex items-start gap-4 border-b border-white/5 pb-2 hover:bg-white/5 p-2 rounded transition-colors">
+         {logs.map((log, i) => (
+             <div key={i} className="flex items-start gap-4 border-b border-white/5 pb-2 hover:bg-white/5 p-2 rounded transition-colors">
                  <span className="text-slate-600 min-w-[120px]">{log.time}</span>
                  <div className="flex-1">
                    {log.badge && (
-                     <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded mr-2 uppercase ${log.badge === 'MANUAL' ? 'bg-purple-500/20 text-purple-400' : 'bg-slate-500/20 text-slate-400'}`}>{log.badge}</span>
+                     <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded mr-2 uppercase ${
+                       log.badge === 'MANUAL' ? 'bg-purple-500/20 text-purple-400' : 'bg-slate-500/20 text-slate-400'
+                     }`}>
+                       {log.badge}
+                     </span>
                    )}
-                   <span className={log.type === 'danger' ? 'text-red-400' : log.type === 'warning' ? 'text-yellow-400' : log.type === 'success' ? 'text-green-400' : 'text-slate-300'}>{log.message}</span>
+                   <span className={
+                     log.type === 'danger' ? 'text-red-400' : 
+                     log.type === 'warning' ? 'text-yellow-400' : 
+                     log.type === 'success' ? 'text-green-400' : 
+                     'text-slate-300'
+                   }>
+                       {log.message}
+                   </span>
                  </div>
              </div>
          ))}
@@ -478,7 +453,7 @@ export default function App() {
   const prevData = useRef(data);
   const manualOverride = useRef(null);
 
-  const isCritical = data.mq_gas_detected || data.pir_motion_detected || !data.water_bowl_wet;
+  const isCritical = data.mq_gas_detected || data.pir_motion_detected || !data.water_bowl_wet || data.error_food || data.error_water;
 
   const addLog = (message, type = 'info', badge = null) => {
     const newLog = {
@@ -522,10 +497,12 @@ export default function App() {
     }
   }, []);
 
+  // Event Intelligence Logger
   useEffect(() => {
     const curr = data;
     const prev = prevData.current;
     
+    // Pump Manual vs Auto
     if (curr.pump_active && !prev.pump_active) {
       const isManual = manualOverride.current === 'refill';
       addLog("Water Pump Engaged", "info", isManual ? "MANUAL" : "AUTO");
@@ -551,9 +528,14 @@ export default function App() {
       addLog("Water reserves critical (<20%)", "warning");
     }
 
+    // Error Flags
+    if (curr.error_food && !prev.error_food) addLog("Food Dispenser Error: Jammed or Empty", "danger");
+    if (curr.error_water && !prev.error_water) addLog("Water System Error: Pump Failure", "danger");
+
     prevData.current = curr;
   }, [data]);
 
+  // Simulation Loop (Fallback)
   useEffect(() => {
     if (simulationMode) {
       const interval = setInterval(() => {
@@ -601,6 +583,7 @@ export default function App() {
            setTimeout(() => setProcessing(p => ({ ...p, [key]: false })), 2000);
         });
     } else {
+      // Simulation
       setTimeout(() => {
         setProcessing(p => ({ ...p, [key]: false }));
         if (cmd === 'refill_now') setData(d => ({ ...d, water_bowl_wet: true, pump_active: true }));
@@ -656,6 +639,13 @@ export default function App() {
     setIsMenuOpen(false);
   };
 
+  // Live Clock
+  const [currentTime, setCurrentTime] = useState(getISTTime());
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(getISTTime()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <div className="min-h-screen bg-black text-slate-200 font-sans selection:bg-blue-500/30 overflow-x-hidden flex flex-col">
       
@@ -676,13 +666,14 @@ export default function App() {
            </h1>
         </div>
         <div className="hidden md:flex items-center gap-2 p-1">
-           {['Dashboard', 'Controls', 'Analytics', 'Activity', 'About'].map((item) => (
-             <NavItem key={item} label={item} active={currentView === item.toLowerCase()} onClick={() => setCurrentView(item.toLowerCase())} />
-           ))}
+           {['Dashboard', 'Controls', 'Analytics', 'Activity', 'About'].map((item) => {
+             const viewKey = item.toLowerCase();
+             return <NavItem key={item} label={item} active={currentView === viewKey} onClick={() => setCurrentView(viewKey)} />
+           })}
         </div>
         <div className="flex items-center gap-4">
            <div className="hidden md:block text-right">
-              <div className="text-xs font-mono text-slate-300">{data.timestamp}</div>
+              <div className="text-xs font-mono text-slate-300">{currentTime}</div>
               <div className="text-[9px] font-mono text-slate-600 uppercase tracking-widest">IST â€¢ {getISTDate()}</div>
            </div>
            <button onClick={() => setIsMenuOpen(true)} className="md:hidden p-2 text-slate-300 hover:text-white">
